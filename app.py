@@ -521,15 +521,21 @@ with st.sidebar:
 
     scan_col1, scan_col2 = st.columns([1, 1])
     with scan_col1:
-        scan_clicked = st.button("\U0001F50D Scan text for data types", use_container_width=True)
+        scan_clicked = st.button("\U0001F50D Scan text for data types", width="stretch")
     with scan_col2:
-        reset_clicked = st.button("\U0001F504 Reset all", use_container_width=True)
+        reset_clicked = st.button("\U0001F504 Reset all", width="stretch")
 
     if reset_clicked:
         st.session_state.history = []
         st.session_state.result = None
         st.session_state.data_elements_ms = []
-        st.session_state.req_text_input = ""
+        # The req_text_input widget has already been instantiated earlier in
+        # this run (it's created above, at the st.text_area call), so we
+        # can't assign to its session_state key directly anymore this run.
+        # Deleting the key instead lets Streamlit fall back to the widget's
+        # default value on the next rerun.
+        if "req_text_input" in st.session_state:
+            del st.session_state["req_text_input"]
         st.rerun()
 
     if scan_clicked:
@@ -570,7 +576,7 @@ with st.sidebar:
         automated_decision_making = st.radio("Involves automated decision-making about individuals?", options=["No", "Yes"], horizontal=True)
         dpia_conducted = st.radio("Has a DPIA / PIA been conducted?", options=["No", "Yes", "Not sure"], horizontal=True)
 
-        submitted = st.form_submit_button("\u25B6\uFE0F Run Privacy Assessment", use_container_width=True, type="primary")
+        submitted = st.form_submit_button("\u25B6\uFE0F Run Privacy Assessment", width="stretch", type="primary")
 
 # --- On submit: compute and store ------------------------------------------
 if submitted:
@@ -649,7 +655,7 @@ else:
                 },
             ))
             fig_gauge.update_layout(height=300, margin=dict(l=20, r=20, t=60, b=10))
-            st.plotly_chart(fig_gauge, use_container_width=True)
+            st.plotly_chart(fig_gauge, width="stretch")
 
         with c2:
             cats = [data["name"] for data in result["principle_scores"].values()]
@@ -658,7 +664,7 @@ else:
             fig_radar.add_trace(go.Scatterpolar(r=vals + [vals[0]], theta=cats + [cats[0]], fill="toself", name="Score"))
             fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
                                      showlegend=False, height=300, margin=dict(l=40, r=40, t=30, b=10))
-            st.plotly_chart(fig_radar, use_container_width=True)
+            st.plotly_chart(fig_radar, width="stretch")
 
         high = [i for i in result["issues"] if i["severity"] == "High"]
         med = [i for i in result["issues"] if i["severity"] == "Medium"]
@@ -707,7 +713,7 @@ else:
                 colors = {"High": "background-color: #fde2e2", "Medium": "background-color: #fff3cd", "Low": "background-color: #e2eefd"}
                 return colors.get(val, "")
 
-            st.dataframe(filtered.style.applymap(color_severity, subset=["Severity"]), use_container_width=True, height=420)
+            st.dataframe(filtered.style.map(color_severity, subset=["Severity"]), width="stretch", height=420)
             st.download_button("\u2B07\uFE0F Download risk register (CSV)", data=df.to_csv(index=False),
                                 file_name=f"{project_name}_risk_register.csv", mime="text/csv")
         else:
@@ -738,10 +744,10 @@ else:
         col1, col2 = st.columns(2)
         with col1:
             st.download_button("\u2B07\uFE0F Download report (Markdown)", data=md_report,
-                                file_name=f"{project_name}_pbd_report.md", mime="text/markdown", use_container_width=True)
+                                file_name=f"{project_name}_pbd_report.md", mime="text/markdown", width="stretch")
         with col2:
             st.download_button("\u2B07\uFE0F Download machine-readable (JSON)", data=json_report,
-                                file_name=f"{project_name}_pbd_report.json", mime="application/json", use_container_width=True)
+                                file_name=f"{project_name}_pbd_report.json", mime="application/json", width="stretch")
 
         st.subheader("Report preview")
         st.markdown(md_report)
@@ -750,7 +756,7 @@ else:
     with tab_history:
         if st.session_state.history:
             hist_df = pd.DataFrame([{k: v for k, v in h.items() if k != "_full"} for h in st.session_state.history])
-            st.dataframe(hist_df, use_container_width=True)
+            st.dataframe(hist_df, width="stretch")
             st.download_button("\u2B07\uFE0F Download history (CSV)", data=hist_df.to_csv(index=False),
                                 file_name="pbd_assessment_history.csv", mime="text/csv")
             options = [f"{i+1}. {h['Project']} ({h['Timestamp']})" for i, h in enumerate(st.session_state.history)]
